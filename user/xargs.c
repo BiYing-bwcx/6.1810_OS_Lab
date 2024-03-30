@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
                 exit(1);
             } else if (pid == 0) {
                 argvs[argc - 1] = new_argvs;
-                printf("argv:%s\n",argvs[argc-1]);
+                //printf("argv:%s\n",argvs[argc-1]);
                 argvs[argc] = 0;
                 exec(argvs[0], argvs);
                 fprintf(2, "exec failed\n");
