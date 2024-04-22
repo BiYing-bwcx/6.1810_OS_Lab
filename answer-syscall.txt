@@ -1,0 +1,48 @@
+Answer the following questions in answers-syscall.txt.
+
+Looking at the backtrace output, which function called syscall?
+myAnswer:usertrap()
+
+Type n a few times to step past struct proc *p = myproc(); Once past this statement, type p /x *p, which prints the current process's proc struct (see kernel/proc.h>) in hex.
+
+What is the value of p->trapframe->a7 and what does that value represent? (Hint: look user/initcode.S, the first user program xv6 starts.)
+myAnswer:7;代表系统调用的编号：SYS_exec in Kernel/syscall.h
+
+The processor is running in kernel mode, and we can print privileged registers such as sstatus (see RISC-V privileged instructions for a description):
+
+    (gdb) p /x $sstatus
+What was the previous mode that the CPU was in?
+myAnswer:user mode 因为我得到的寄存器值是0x22,第8位即SPP是0（从右开始数且从
+0开始计数）根据官方文档得知先前是user mode。
+
+To track down the source of a kernel page-fault panic, search for the sepc value printed for the panic you just saw in the file kernel/kernel.asm, which contains the assembly for the compiled kernel.
+
+Write down the assembly instruction the kernel is panicing at. Which register corresponds to the variable num?
+myAnswer:4508  // num = p->trapframe->a7;
+ 4509   num = *(int *)0;
+ 4510     80002052: 00002683            lw  a3,0(zero) # 0 <_entry-0x80000000> register: a3
+
+Confirm that the faulting assembly instruction is the same as the one you found above.
+
+Why does the kernel crash? Hint: look at figure 3-3 in the text; is address 0 mapped in the kernel address space? Is that confirmed by the value in scause above? (See description of scause in RISC-V privileged instructions)
+myAnswer:scause 0xd 根据官方文档得知原因：Load page fault 地址0未映射到内核地址空间。
+
+Note that scause was printed by the kernel panic above, but often you need to look at additional info to track down the problem that caused the panic. For example, to find out which user process was running when the kernel paniced, you can print out the process's name:
+
+    (gdb) p p->name
+  
+What is the name of the binary that was running when the kernel paniced? What is its process id (pid)?
+myAnswer:(gdb) p p->name
+$1 = "initcode\000\000\000\000\000\000\000"
+pid:0x1 (gdb) p /x *p
+$2 = {lock = {locked = 0x0, name = 0x800081b8, cpu = 0x0}, state = 0x4, 
+  chan = 0x0, killed = 0x0, xstate = 0x0, pid = 0x1, parent = 0x0, 
+  kstack = 0x3fffffd000, sz = 0x1000, pagetable = 0x87f73000, 
+  trapframe = 0x87f74000, context = {ra = 0x800014c2, sp = 0x3fffffde70, 
+    s0 = 0x3fffffdea0, s1 = 0x80008d70, s2 = 0x80008940, s3 = 0x1, 
+    s4 = 0x3fffffded0, s5 = 0x8000ebf8, s6 = 0x3, s7 = 0x80019a10, s8 = 0x1, 
+    s9 = 0x80019b38, s10 = 0x4, s11 = 0x0}, ofile = {0x0 <repeats 16 times>}, 
+  cwd = 0x80016e80, name = {0x69, 0x6e, 0x69, 0x74, 0x63, 0x6f, 0x64, 0x65, 
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}}
+(gdb) 
+
